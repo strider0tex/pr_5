@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Bot, InlineKeyboard } = require('grammy');
 require('dotenv').config();
 
