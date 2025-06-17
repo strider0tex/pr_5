@@ -1,47 +1,64 @@
-const { Bot } = require('grammy');
+const { Bot, InlineKeyboard } = require('grammy');
+require('dotenv').config();
 
-const bot = new Bot('7754756966:AAF2Ohou8nuEX6ZRymmJboU9i-RTRGI9eWA'); 
-
-const games = {};
+const bot = new Bot(process.env.BOT_TOKEN);
 
 bot.command('start', async (ctx) => {
+    const keyboard = new InlineKeyboard()
+        .text('Приветствие', 'hello')
+        .text('Помощь', 'help')
+        .row()
+        .text('Информация', 'info')
+        .text('Настройки', 'settings');
+
     await ctx.reply(
-        'Привет! Я бот для игры "Угадай число".\n' +
-        'Чтобы начать игру, введи команду /play\n' +
-        'Я загадаю число от 1 до 100, а ты попробуешь его угадать!'
+        '👋 Добро пожаловать! Выберите действие:',
+        { reply_markup: keyboard }
     );
 });
 
-bot.command('play', async (ctx) => {
-    const chatId = ctx.chat.id;
-    const secretNumber = Math.floor(Math.random() * 100) + 1;
-    games[chatId] = secretNumber;
-    await ctx.reply('Я загадал число от 1 до 100! Попробуй угадать!');
+bot.on('callback_query:data', async (ctx) => {
+    const action = ctx.callbackQuery.data;
+    
+    switch (action) {
+        case 'hello':
+            await ctx.reply('Привет, ' + ctx.from.first_name + '! 😊');
+            break;
+            
+        case 'help':
+            await ctx.reply('ℹ️ Это бот с кнопками. Просто нажимайте на кнопки для взаимодействия!');
+            break;
+            
+        case 'info':
+            const infoKeyboard = new InlineKeyboard()
+                .text('Автор', 'author')
+                .text('Версия', 'version');
+                
+            await ctx.reply('Что вас интересует?', { reply_markup: infoKeyboard });
+            break;
+            
+        case 'settings':
+            await ctx.reply('⚙️ Настройки пока не доступны');
+            break;
+            
+        case 'author':
+            await ctx.reply('Автор: Ваше Имя\nGitHub: github.com/ваш-логин');
+            break;
+            
+        case 'version':
+            await ctx.reply('Версия бота: 1.0.0');
+            break;
+            
+        default:
+            await ctx.reply('Неизвестная команда');
+    }
+    
+    await ctx.answerCallbackQuery();
 });
 
-bot.on('message:text', async (ctx) => {
-    const chatId = ctx.chat.id;
-    const messageText = ctx.message.text;
-    
-    if (games[chatId] === undefined) return;
-    const guess = parseInt(messageText);
-    
-    if (isNaN(guess)) {
-        await ctx.reply('Пожалуйста, введите число!');
-        return;
-    }
-    
-    const secretNumber = games[chatId];
-    
-    if (guess < secretNumber) {
-        await ctx.reply('Больше!');
-    } else if (guess > secretNumber) {
-        await ctx.reply('Меньше!');
-    } else {
-        await ctx.reply('Поздравляю! Ты угадал число!');
-        delete games[chatId];
-    }
+bot.on('message', async (ctx) => {
+    await ctx.reply('Используйте команду /start для начала работы');
 });
 
 bot.start();
-console.log('Бот запущен и готов к игре!');
+console.log('Бот с кнопками запущен!');
