@@ -1,44 +1,47 @@
 const { Bot } = require('grammy');
 
-const bot = new Bot('7334139721:AAGW6rsalBlkLkR5ZQ80y8xNc45aJ6Jh1uA');
+const bot = new Bot('7754756966:AAF2Ohou8nuEX6ZRymmJboU9i-RTRGI9eWA'); 
 
-const jokes = [
-  "Почему программисты путают Хэллоуин и Рождество? Потому что Oct 31 == Dec 25!",
-  "Как называют программиста, который не любит кофе? Он Java-скриптер!",
-  "Почему программист вышел из дома? Потому что у него не было RAM!",
-  "Сколько программистов нужно, чтобы вкрутить лампочку? Ни одного, это hardware проблема!",
-  "Почему 1 боится 0? Потому что 1 0 0 1!"
-];
+const games = {};
 
 bot.command('start', async (ctx) => {
-  await ctx.reply('Привет! Я простой Telegram-бот.\nЯ могу отвечать на команды /help, /echo и /joke.\nПопробуй что-нибудь!');
+    await ctx.reply(
+        'Привет! Я бот для игры "Угадай число".\n' +
+        'Чтобы начать игру, введи команду /play\n' +
+        'Я загадаю число от 1 до 100, а ты попробуешь его угадать!'
+    );
 });
 
-bot.command('help', async (ctx) => {
-  await ctx.reply('Доступные команды:\n' +
-    '/start - Начать работу с ботом\n' +
-    '/help - Получить список команд\n' +
-    '/echo [текст] - Повторить ваш текст\n' +
-    '/joke - Получить случайную шутку');
+bot.command('play', async (ctx) => {
+    const chatId = ctx.chat.id;
+    const secretNumber = Math.floor(Math.random() * 100) + 1;
+    games[chatId] = secretNumber;
+    await ctx.reply('Я загадал число от 1 до 100! Попробуй угадать!');
 });
 
-bot.command('echo', async (ctx) => {
-  const text = ctx.message.text.substring(6); // Удаляем "/echo " из сообщения
-  if (text.trim() === '') {
-    await ctx.reply('Пожалуйста, напишите текст после команды /echo');
-  } else {
-    await ctx.reply(text);
-  }
-});
-
-bot.command('joke', async (ctx) => {
-  const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
-  await ctx.reply(randomJoke);
-});
-
-bot.on('message', async (ctx) => {
-  await ctx.reply('Я не понимаю ваше сообщение. Попробуйте команду /help');
+bot.on('message:text', async (ctx) => {
+    const chatId = ctx.chat.id;
+    const messageText = ctx.message.text;
+    
+    if (games[chatId] === undefined) return;
+    const guess = parseInt(messageText);
+    
+    if (isNaN(guess)) {
+        await ctx.reply('Пожалуйста, введите число!');
+        return;
+    }
+    
+    const secretNumber = games[chatId];
+    
+    if (guess < secretNumber) {
+        await ctx.reply('Больше!');
+    } else if (guess > secretNumber) {
+        await ctx.reply('Меньше!');
+    } else {
+        await ctx.reply('Поздравляю! Ты угадал число!');
+        delete games[chatId];
+    }
 });
 
 bot.start();
-console.log('Бот запущен...');
+console.log('Бот запущен и готов к игре!');
